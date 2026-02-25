@@ -41,5 +41,4 @@ This lab is a multi-stage challenge that covers common web vulnerabilities and L
     - **Path:** `/root/flag_stage3.txt`
     - **Flag:** `VulnOS{R00t_Pr1v1l3g3_Escalation}`
 
----
-Happy Hunting!
+

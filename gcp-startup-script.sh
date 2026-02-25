@@ -44,7 +44,9 @@ systemctl start mysql
 # Wait for MySQL to be ready
 until mysqladmin ping >/dev/null 2>&1; do echo "[.] Waiting for MySQL..."; sleep 2; done
 
-# Import schema
+# Import schema (Wipes and resets the lab database to fresh state)
+echo "[*] Resetting database..."
+mysql -u root -e "DROP DATABASE IF EXISTS hospital_portal;"
 mysql -u root < db/schema.sql
 
 # --- 5. User & SSH Setup ---

@@ -69,9 +69,14 @@ mkdir -p /var/www/html/assets/backups
 cp /home/dr_house/.ssh/id_rsa /var/www/html/assets/backups/id_rsa_backup
 chmod 644 /var/www/html/assets/backups/id_rsa_backup
 
-# Enable SSH
-systemctl enable ssh
-systemctl start ssh
+# Enable Password Authentication (GCP disables this by default)
+sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+if ! grep -q "^PasswordAuthentication yes" /etc/ssh/sshd_config; then
+    echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+fi
+
+systemctl restart ssh
 
 # --- 6. Vulnerable "Monitored" App ---
 # Created to give the systemd service something to run

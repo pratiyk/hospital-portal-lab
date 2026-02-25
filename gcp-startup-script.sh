@@ -71,16 +71,21 @@ chmod 644 /var/www/html/assets/backups/id_rsa_backup
 systemctl enable ssh
 systemctl start ssh
 
-# --- 6. Vulnerable SUID Binaries ---
-echo "[*] Compiling and installing SUID binaries..."
-gcc -o /usr/bin/health-check binary/health-check.c
-gcc -o /usr/bin/backup-manager binary/backup-manager.c
-gcc -o /usr/bin/network-monitor binary/network-monitor.c
+# --- 6. Vulnerable "Monitored" App ---
+# Created to give the systemd service something to run
+echo "[*] Setting up monitored application..."
+cat <<EOF > /usr/bin/hospital-monitor-app
+#!/bin/bash
+# Saint Mary's Clinic - Health Monitor Payload
+# This script simulates a background monitoring process.
+while true; do
+    echo "[$(date)] System health check: OK" >> /var/log/hospital-monitor.log
+    sleep 60
+done
+EOF
+chmod +x /usr/bin/hospital-monitor-app
 
-chown root:root /usr/bin/health-check /usr/bin/backup-manager /usr/bin/network-monitor
-chmod 4755 /usr/bin/health-check /usr/bin/backup-manager /usr/bin/network-monitor
-
-# --- 7. Systemd Service Misconfig (PrivEsc Path #1) ---
+# --- 7. Systemd Service Misconfig (PrivEsc Path) ---
 echo "[*] Setting up vulnerable systemd service..."
 
 # A. Hospital Health Checker Service
@@ -92,17 +97,18 @@ After=network.target
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/bin/health-check
+WorkingDirectory=/var/www/html
+ExecStart=/usr/bin/hospital-monitor-app
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# LAB CONFIG: Make the service file WRITABLE by www-data (Pattern match)
+# LAB CONFIG: Make the service file WRITABLE by www-data (The main exploit path)
 chown www-data:www-data /etc/systemd/system/hospital-monitor.service
 
-# --- 8. Sudoers Misconfig (PrivEsc Path #2) ---
+# --- 8. Sudoers Misconfig ---
 # Allow www-data to restart the service without password
 echo "www-data ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart hospital-monitor" > /etc/sudoers.d/hospital-lab
 chmod 440 /etc/sudoers.d/hospital-lab
@@ -119,7 +125,7 @@ chmod 400 /var/www/flag_stage2.txt
 echo "SUCCESS! You have achieved root access. Flag: VulnOS{R00t_Pr1v1l3g3_Escalation}" > /root/flag_stage3.txt
 chmod 400 /root/flag_stage3.txt
 
-# Cron job to trigger the service/check every minute
+# Cron job to restart the service every minute (triggers the student's payload)
 echo "* * * * * root /usr/bin/systemctl restart hospital-monitor" > /etc/cron.d/hospital-lab-cron
 chmod 644 /etc/cron.d/hospital-lab-cron
 

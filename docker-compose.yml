@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  hospital-portal:
+    build: .
+    container_name: saint-marys-clinic
+    ports:
+      - "80:80"
+      - "2222:22"
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+    tty: true
